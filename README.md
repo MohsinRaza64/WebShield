@@ -11,4 +11,5 @@ Future plans for this application include the addition of advanced features such
 ![5](https://github.com/user-attachments/assets/409092ca-1df6-4a8d-88df-dc6b82dd234d)
 
 The Application integrates with the MISP(Malware Information Sharing Platform) for threat intelligence required to perform it's functionalities.
+
 <img width="307" alt="6" src="https://github.com/user-attachments/assets/5189fb13-3dd0-4cf7-b0a5-5ee689f49c7b">
