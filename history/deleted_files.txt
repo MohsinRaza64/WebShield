@@ -1,0 +1,17 @@
+invoice_urgent_payment.docx.exe
+bank_statement.zip
+update_security_software.exe
+password_reset.pdf.scr
+free_music_download.mp3.vbs
+application_form.docx.bat
+your_photo_gallery.rar
+documents.zip.bat
+credit_report_final.xlsm
+discount_coupon.pdf.exe
+urgent_message.docx.vbs
+shipping_label.zip
+your_invoice.pdf.scr
+confirm_account_details.exe
+software_update_installer.exe
+
+# examples

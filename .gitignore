@@ -1,0 +1,62 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+ENV/
+env/
+.env/
+
+# Log files
+*.log
+
+# Configuration files
+*.json
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Miscellaneous
+*.egg-info/
+dist/
+build/
+*.sqlite3
+*.pkl
+*.pyd
+*.egg
+
+# Ignore compiled bytecode
+*.pyc
+*.pyo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.pot
+
+# Pytest cache
+.cache/
+pytest_cache/
+
+# Other IDE specific files
+*.iml
+*.ipr
+*.iws
+*.swp
+*~

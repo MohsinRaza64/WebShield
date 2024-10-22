@@ -1,0 +1,18 @@
+httpforever.com
+paypaI-verification.com
+google-secure-login.com
+micros0ft-support.io
+bankofamerca.com
+amaz0n-update-services.com
+apple-account-verify.com
+faceb0ok-security-check.com
+dropbox-filesharing.com
+netfl1x-billing.com
+chasebank-support.org
+in5tagram-verification.net
+updatemac-os.com
+googIe-drive-download.com
+paypal.securepay-verification.com
+outlook-security-alert.com
+
+# examples

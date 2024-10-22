@@ -1,0 +1,18 @@
+readme.txt
+project_report_final.docx
+invoice_urgent_payment.docx.exe
+presentation_slides.pptx
+budget_plan_2024.xlsx
+update_security_software.exe
+meeting_minutes_2023.docx
+research_article.docx
+password_reset.pdf.scr
+contract_agreement.pdf
+user_guide_v1.0.pdf
+free_music_download.mp3.vbs
+travel_itinerary_2024.pdf
+malicious_file.exe
+data_analysis_report.xlsx
+client_feedback_summary.docx
+
+# examples
