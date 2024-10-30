@@ -1,0 +1,1 @@
+Yara rules files go in this directory!
