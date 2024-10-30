@@ -62,4 +62,3 @@ pytest_cache/
 *~
 
 # Other IDE specific files
-*.yar
