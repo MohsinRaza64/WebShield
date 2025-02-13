@@ -33,8 +33,8 @@ def get_domains():
         logging.error(f"Error retrieving domains from database: {str(e)}")
         return [
             "example.com", # dummy value
-            "httpforever.com", # dummy value
-            "instagram.com" # dummy value
+            # "httpforever.com", # dummy value
+            # "instagram.com" # dummy value
             # "youtube.com"
         ]
     

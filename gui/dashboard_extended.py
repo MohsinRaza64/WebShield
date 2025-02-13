@@ -2,6 +2,9 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 from utils.file_handler import append_to_file, remove_line_from_file
 
+from proxy.proxy_server import start_proxy 
+from malware_detector.file_processor import start_file_processor
+
 ctk.set_appearance_mode("System") 
 ctk.set_default_color_theme("blue") 
 
@@ -72,14 +75,20 @@ class Dashboard(ctk.CTk):
         self.stop_button.place(relx=0.64, rely=0.4, anchor="center")
 
     def setup_blocked_domains_tab(self):
-        scrollable_frame = ctk.CTkScrollableFrame(self.blocked_domains_tab)
-        scrollable_frame.pack(expand=True, fill="both")
+        # Check if the scrollable frame already exists
+        if hasattr(self, 'scrollable_frame'):
+            # Destroy old widgets inside the frame
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()
+        else:
+            self.scrollable_frame = ctk.CTkScrollableFrame(self.blocked_domains_tab)
+            self.scrollable_frame.pack(expand=True, fill="both")
 
         blocked_domains = self.load_blocked_domains()
 
-        for i, domain in enumerate(blocked_domains):
+        for i, domain in enumerate(reversed(blocked_domains)):
             textbox = ctk.CTkTextbox(
-                scrollable_frame, 
+                self.scrollable_frame, 
                 width=600, 
                 height=1,  
                 font=bold_font, 
@@ -90,14 +99,21 @@ class Dashboard(ctk.CTk):
             textbox.configure(state="disabled") 
 
     def setup_downloaded_files_tab(self):
-        scrollable_frame = ctk.CTkScrollableFrame(self.downloaded_files_tab)
-        scrollable_frame.pack(expand=True, fill="both")
+        # Check if the scrollable frame already exists
+        if hasattr(self, 'scrollable_frame2'):
+            # Destroy old widgets inside the frame
+            for widget in self.scrollable_frame2.winfo_children():
+                widget.destroy()
+        else:
+            # Create the scrollable frame if it doesn't exist
+            self.scrollable_frame2 = ctk.CTkScrollableFrame(self.downloaded_files_tab)
+            self.scrollable_frame2.pack(expand=True, fill="both")
 
         downloaded_files = self.load_downloaded_files()
 
-        for i, file in enumerate(downloaded_files):
+        for i, file in enumerate(reversed(downloaded_files)):
             textbox = ctk.CTkTextbox(
-                scrollable_frame, 
+                self.scrollable_frame2, 
                 width=600,   
                 height=1,    
                 font=bold_font, 
@@ -105,18 +121,25 @@ class Dashboard(ctk.CTk):
             )
             textbox.grid(row=i, column=0, padx=1, pady=1)  
             textbox.insert("0.0", file)
-            textbox.configure(state="disabled") 
+            textbox.configure(state="disabled")  
+
 
     def setup_deleted_files_tab(self):
-        scrollable_frame = ctk.CTkScrollableFrame(self.deleted_files_tab)
-        scrollable_frame.pack(expand=True, fill="both")
+        # Check if the scrollable frame already exists
+        if hasattr(self, 'scrollable_frame3'):
+            # Destroy old widgets inside the frame
+            for widget in self.scrollable_frame3.winfo_children():
+                widget.destroy()
+        else:
+            self.scrollable_frame3 = ctk.CTkScrollableFrame(self.deleted_files_tab)
+            self.scrollable_frame3.pack(expand=True, fill="both")
 
         deleted_files = self.load_deleted_files()
 
-        for i, file in enumerate(deleted_files):
+        for i, file in enumerate(reversed(deleted_files)):
             textbox = ctk.CTkTextbox(
-                scrollable_frame, 
-                width=600,  
+                self.scrollable_frame3,
+                width=600,
                 height=1,   
                 font=bold_font, 
                 fg_color=list_color
@@ -203,6 +226,7 @@ class Dashboard(ctk.CTk):
         remove_line_from_file("manual_data/whitelist.txt", website)
         print(f"Website to block: {website}")
         self.website_input.delete(0, 'end')
+        self.setup_blocked_domains_tab()
 
     def add_exception(self):
         exception = self.exception_input.get()
@@ -214,14 +238,39 @@ class Dashboard(ctk.CTk):
         print(f"Exception to add: {exception}")
         self.exception_input.delete(0, 'end')
 
+    
+
+    def run_proxy(self):
+        start_proxy(self)
+
+    def run_file_processor(self):
+        start_file_processor(self)
+
+    
+
     def start_webshield(self):
-        print("WebShield started!")
+        import threading
+        if not hasattr(self, 'proxy_thread') or not self.proxy_thread.is_alive():
+            self.proxy_thread = threading.Thread(target=self.run_proxy, daemon=True)
+            self.proxy_thread.start()
+            print("Proxy Server started!")
+        else:
+            print("Proxy Server is already running.")
+
+        if not hasattr(self, 'file_processor_thread') or not self.file_processor_thread.is_alive():
+            self.file_processor_thread = threading.Thread(target=self.run_file_processor, daemon=True)
+            self.file_processor_thread.start()
+            print("File Monitor started!")
+        else:
+            print("File Monitor is already running.")
+
 
     def stop_webshield(self):
         print("WebShield stopped!")
 
     def run(self):
-        self.mainloop()
+        self.mainloop()     
+    
 
 # if __name__ == "__main__":
 #     app = Dashboard()

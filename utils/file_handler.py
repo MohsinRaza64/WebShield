@@ -34,8 +34,9 @@ def add_blocked_websites(blocked_websites, file_path):
     try:
         with open(file_path, "r") as file:
             new_domains = {line.strip() for line in file if line.strip()}
-        updated_blocked_websites = blocked_websites + [domain for domain in new_domains if domain not in blocked_websites]
-        return updated_blocked_websites
+        updated_blocked_websites = blocked_websites.union(new_domains)  # Use set union to merge lists safely
+        return list(updated_blocked_websites)  # Convert back to list if needed
+
     except FileNotFoundError:
         print(f"Error: The file '{file_path}' was not found.")
         return blocked_websites
