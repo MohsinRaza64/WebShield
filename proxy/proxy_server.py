@@ -5,6 +5,16 @@ import time
 from urllib.parse import urlparse
 from misp.misp import get_domains
 from utils.file_handler import append_to_file, exclude_entries, add_blocked_websites
+import os
+import sys
+
+BASE_PATH = getattr(sys, '_MEIPASS', os.path.abspath("."))
+blacklist_file = os.path.join(BASE_PATH, "manual_data", "blacklist.txt")
+whitelist_file = os.path.join(BASE_PATH, "manual_data", "whitelist.txt")
+blocked_domains_file = os.path.join(BASE_PATH, "history", "blocked_domains.txt")
+deleted_files_file = os.path.join(BASE_PATH, "history", "deleted_files.txt")
+downloaded_files_file = os.path.join(BASE_PATH, "history", "downloaded_files.txt")
+
 
 BUFFER_SIZE = 8192  # Increased buffer size for better performance
 
@@ -20,10 +30,10 @@ def refresh_blocked_websites():
     with blocked_websites_lock:
         try:
             new_blocked_websites = set(get_domains()) if get_domains() else set()
-            new_blocked_websites = set(exclude_entries(new_blocked_websites, 'manual_data/whitelist.txt'))
-            print(new_blocked_websites)
-            new_blocked_websites = add_blocked_websites(new_blocked_websites, 'manual_data/blacklist.txt')
-            print(new_blocked_websites)
+            new_blocked_websites = set(exclude_entries(new_blocked_websites, whitelist_file))
+            # print(new_blocked_websites)
+            new_blocked_websites = add_blocked_websites(new_blocked_websites, blacklist_file)
+            # print(new_blocked_websites)
             blocked_websites = new_blocked_websites  # Atomic assignment
         except Exception as e:
             print(f"Error refreshing blocked websites: {e}")
@@ -41,8 +51,9 @@ def handle_client(client_socket, dashboard):
 
             # Lock before checking blocked websites
             with blocked_websites_lock:
+                print(blocked_websites)
                 if hostname and any(blocked_site in hostname for blocked_site in blocked_websites):
-                    append_to_file('history/blocked_domains.txt', hostname)
+                    append_to_file(blocked_domains_file, hostname)
                     dashboard.setup_blocked_domains_tab()
                     response = (
                         "HTTP/1.1 403 Forbidden\r\n"
@@ -67,7 +78,8 @@ def handle_client(client_socket, dashboard):
         client_socket.close()
 
 def forward_http_request(client_socket, parsed_url, request):
-    """Forwards HTTP requests to the target server."""
+    """Forwards HTTP requests and dynamically checks for new blocked websites."""
+    global blocked_websites
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.connect((parsed_url.hostname, parsed_url.port or 80))
@@ -77,30 +89,26 @@ def forward_http_request(client_socket, parsed_url, request):
                 response = server_socket.recv(BUFFER_SIZE)
                 if not response:
                     break
+
+                # **Dynamically check for new blocked websites**
+                with blocked_websites_lock:
+                    if any(blocked_site in parsed_url.hostname for blocked_site in blocked_websites):
+                        print(f"Blocking {parsed_url.hostname} dynamically.")
+                        append_to_file(blocked_domains_file, parsed_url.hostname)
+                        client_socket.sendall(b"HTTP/1.1 403 Forbidden\r\n\r\n")
+                        return
+
                 client_socket.sendall(response)
     except Exception as e:
         print(f"Error forwarding request: {e}")
 
+
 def handle_https_tunnel(client_socket, first_line, dashboard):
-    """Handles HTTPS tunneling through the proxy."""
+    """Handles HTTPS tunneling through the proxy and dynamically checks for new blocked websites."""
     global blocked_websites
     try:
         target_host, target_port = first_line.split()[1].split(':')
         target_port = int(target_port)
-
-        with blocked_websites_lock:
-            if any(blocked_site in target_host for blocked_site in blocked_websites):
-                append_to_file('history/blocked_domains.txt', target_host)
-                dashboard.setup_blocked_domains_tab()
-                response = (
-                    "HTTP/1.1 403 Forbidden\r\n"
-                    "Content-Type: text/html\r\n"
-                    "\r\n"
-                    "<html><body><h1>Blocked by WebShield</h1>"
-                    "<p>This website is blocked for security reasons.</p></body></html>"
-                )
-                client_socket.sendall(response.encode())
-                return
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as target_socket:
             target_socket.connect((target_host, target_port))
@@ -108,7 +116,17 @@ def handle_https_tunnel(client_socket, first_line, dashboard):
 
             sockets = [client_socket, target_socket]
             while True:
-                readable, _, _ = select.select(sockets, [], [])
+                readable, _, _ = select.select(sockets, [], [], 0.5)  # Add timeout for periodic checks
+
+                # **Check if the website is now blocked during runtime**
+                with blocked_websites_lock:
+                    if any(blocked_site in target_host for blocked_site in blocked_websites):
+                        print(f"Blocking {target_host} dynamically.")
+                        append_to_file(blocked_domains_file, target_host)
+                        dashboard.setup_blocked_domains_tab()
+                        client_socket.sendall(b"HTTP/1.1 403 Forbidden\r\n\r\n")
+                        return  # Close the connection immediately
+
                 for sock in readable:
                     try:
                         data = sock.recv(BUFFER_SIZE)
@@ -151,7 +169,7 @@ def start_proxy(dashboard):
     def periodic_refresh():
         while not stop_event.is_set():
             refresh_blocked_websites()
-            time.sleep(2)  # Refresh every 10 seconds
+            time.sleep(1)  # Refresh every 1 seconds
 
     refresh_thread = threading.Thread(target=periodic_refresh, daemon=True)
     refresh_thread.start()

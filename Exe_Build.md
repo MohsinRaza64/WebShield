@@ -1,0 +1,3 @@
+pyinstaller --name WebShield --onefile --noconsole --icon=logo.ico --add-data "assets/logo.ico;assets" --add-data "assets;assets" --hidden-import=pystray --hidden-import=PIL --hidden-import=PIL.ImageTk --hidden-import=customtkinter --hidden-import=proxy.proxy_server --hidden-import=malware_detector.file_processor --additional-hooks-dir=. main.py
+
+pyinstaller --name WebShield --onefile --noconsole --icon=logo.ico --add-data "assets/logo.ico;assets" --add-data "assets;assets" --hidden-import=pystray --hidden-import=PIL --hidden-import=PIL.ImageTk --hidden-import=customtkinter --hidden-import=proxy.proxy_server --hidden-import=malware_detector.file_processor --additional-hooks-dir=. main.py

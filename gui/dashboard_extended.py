@@ -1,9 +1,12 @@
 import customtkinter as ctk
 from PIL import Image, ImageTk
 from utils.file_handler import append_to_file, remove_line_from_file
-
+import sys
 from proxy.proxy_server import start_proxy 
 from malware_detector.file_processor import start_file_processor
+import os
+import threading
+from pystray import MenuItem as item, Icon  # Correct import
 
 ctk.set_appearance_mode("System") 
 ctk.set_default_color_theme("blue") 
@@ -17,13 +20,64 @@ bg_clr = "#001e43"
 bold_font = ("Arial", 12, "bold") 
 
 
+# Dynamically locate the assets folder
+BASE_PATH = getattr(sys, '_MEIPASS', os.path.abspath("."))
+
+# Define the assets directory path
+assets_dir = os.path.join(BASE_PATH, "assets")
+
+# Create the assets directory if it doesn't exist
+os.makedirs(assets_dir, exist_ok=True)
+
+# Load images
+bg_path = os.path.join(assets_dir, "bg.jpg")
+bg2_path = os.path.join(assets_dir, "bg2.jpg")
+logopng = os.path.join(assets_dir, "transparent.png")
+
+# Check if files exist to avoid crashes
+for file_path in [bg_path, bg2_path, logopng]:
+    if not os.path.exists(file_path):
+        print(f"Warning: Missing file: {file_path}")
+
+# Get the correct base path (for PyInstaller or normal script execution)
+BASE_PATH = getattr(sys, '_MEIPASS', os.path.abspath("."))
+
+# Define directory paths
+manual_data_dir = os.path.join(BASE_PATH, "manual_data")
+history_dir = os.path.join(BASE_PATH, "history")
+
+# Ensure directories exist before using them
+os.makedirs(manual_data_dir, exist_ok=True)
+os.makedirs(history_dir, exist_ok=True)
+
+# Define file paths
+blacklist_file = os.path.join(manual_data_dir, "blacklist.txt")
+whitelist_file = os.path.join(manual_data_dir, "whitelist.txt")
+blocked_domains_file = os.path.join(history_dir, "blocked_domains.txt")
+deleted_files_file = os.path.join(history_dir, "deleted_files.txt")
+downloaded_files_file = os.path.join(history_dir, "downloaded_files.txt")
+
+
 class Dashboard(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("WebShield")
         self.geometry("640x360")
+        self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self.hide_to_tray)  # Redirect close button
 
-        self.background_image = Image.open("assets/bg.jpg") 
+        # Correctly find the assets folder
+        base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+        icon_path = os.path.join(base_path, "assets", "logo.ico")
+
+        if os.path.exists(icon_path):  # Debugging: Check if the file exists
+            self.iconbitmap(icon_path)
+        else:
+            print(f"Error: Icon file not found at {icon_path}")
+
+        self.tray_icon = None  # Placeholder for the system tray icon
+
+        self.background_image = Image.open(bg_path) 
         self.background_photo = ImageTk.PhotoImage(self.background_image)
 
         self.tabview = ctk.CTkTabview(self)
@@ -54,12 +108,40 @@ class Dashboard(ctk.CTk):
         self.setup_tab(self.add_exception_tab)
         self.setup_add_exception_tab()
 
+        
+    def hide_to_tray(self):
+        """Minimizes the app to the system tray instead of closing."""
+        self.withdraw()  # Hide window
+        self.show_tray_icon()
+
+    def show_tray_icon(self):
+        """Displays the system tray icon with menu options."""
+        def show_app(icon, item):
+            """Restores the app from the system tray."""
+            icon.stop()
+            self.after(0, self.deiconify)  # Restore window
+
+        def exit_app(icon, item):
+            """Closes the app completely."""
+            icon.stop()
+            self.destroy()
+
+        menu = (item('Show', show_app), item('Exit', exit_app))
+
+        # Load the custom image for the tray icon
+        image = Image.open(logopng)
+
+        self.tray_icon = Icon("WebShield", image, "WebShield", menu)
+
+        # Run the system tray icon in a separate thread
+        threading.Thread(target=self.tray_icon.run, daemon=True).start()
+
     def setup_tab(self, tab):
         background_label = ctk.CTkLabel(tab, text="Setup", image=self.background_photo)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
     def setup_welcome_tab(self):
-        self.welcome_image_original = Image.open("assets/bg.jpg") 
+        self.welcome_image_original = Image.open(bg_path) 
         self.welcome_photo = ImageTk.PhotoImage(self.welcome_image_original)
 
         self.welcome_label = ctk.CTkLabel(self.welcome_tab, text="A lightweight web shield that safeguards your browsing\n from malicious sites and malware files online!", image=self.welcome_photo)
@@ -150,10 +232,10 @@ class Dashboard(ctk.CTk):
 
     def setup_block_website_tab(self):
 
-        self.welcome_image_original = Image.open("assets/bg2.jpg") 
+        self.welcome_image_original = Image.open(bg2_path) 
         self.welcome_photo2 = ImageTk.PhotoImage(self.welcome_image_original)
 
-        self.welcome_image_original = Image.open("assets/transparent.png") 
+        self.welcome_image_original = Image.open(logopng) 
         self.welcome_photo3 = ImageTk.PhotoImage(self.welcome_image_original)
 
         self.welcome_label = ctk.CTkLabel(self.block_website_tab, text="", image=self.welcome_photo2)
@@ -174,10 +256,10 @@ class Dashboard(ctk.CTk):
 
     def setup_add_exception_tab(self):
 
-        self.welcome_image_original = Image.open("assets/bg2.jpg") 
+        self.welcome_image_original = Image.open(bg2_path) 
         self.welcome_photo2 = ImageTk.PhotoImage(self.welcome_image_original)
 
-        self.welcome_image_original = Image.open("assets/transparent.png") 
+        self.welcome_image_original = Image.open(logopng) 
         self.welcome_photo3 = ImageTk.PhotoImage(self.welcome_image_original)
 
         self.welcome_label = ctk.CTkLabel(self.add_exception_tab, text="", image=self.welcome_photo2)
@@ -198,21 +280,21 @@ class Dashboard(ctk.CTk):
 
     def load_blocked_domains(self):
         try:
-            with open("history/blocked_domains.txt", "r") as file:
+            with open(blocked_domains_file, "r") as file:
                 return [line.strip() for line in file.readlines()]
         except FileNotFoundError:
             return ["No blocked domains found."]
 
     def load_downloaded_files(self):
         try:
-            with open("history/downloaded_files.txt", "r") as file:
+            with open(downloaded_files_file, "r") as file:
                 return [line.strip() for line in file.readlines()]
         except FileNotFoundError:
             return ["No downloaded files found."]
 
     def load_deleted_files(self):
         try:
-            with open("history/deleted_files.txt", "r") as file:
+            with open(deleted_files_file, "r") as file:
                 return [line.strip() for line in file.readlines()]
         except FileNotFoundError:
             return ["No deleted files found."]
@@ -222,8 +304,9 @@ class Dashboard(ctk.CTk):
         if not website:
             print("Please enter a website to block.")
             return
-        append_to_file("manual_data/blacklist.txt", website)
-        remove_line_from_file("manual_data/whitelist.txt", website)
+        
+        append_to_file(blacklist_file, website)
+        remove_line_from_file(whitelist_file, website)
         print(f"Website to block: {website}")
         self.website_input.delete(0, 'end')
         self.setup_blocked_domains_tab()
@@ -233,8 +316,8 @@ class Dashboard(ctk.CTk):
         if not exception:
             print("Please enter a website to block.")
             return
-        append_to_file("manual_data/whitelist.txt", exception)
-        remove_line_from_file("manual_data/blacklist.txt", exception)
+        append_to_file(whitelist_file, exception)
+        remove_line_from_file(blacklist_file, exception)
         print(f"Exception to add: {exception}")
         self.exception_input.delete(0, 'end')
 
