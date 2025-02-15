@@ -1,15 +1,25 @@
 import mysql.connector
 import logging
+from utils.misp_utils import get_misp_config
 
-mysql_host = ""
-mysql_user = ""
-mysql_password = ""
-mysql_db = ""
+config = get_misp_config()
+
+if config:
+    mysql_host = config.get("mysql_host", "")
+    mysql_user = config.get("mysql_user", "")
+    mysql_password = config.get("mysql_password", "")
+    mysql_db = config.get("mysql_db", "")
+else:
+    mysql_host = ""
+    mysql_user = ""
+    mysql_password = ""
+    mysql_db = ""
 
 logging.basicConfig(filename='error.log', level=logging.INFO)
 
 def get_domains():
     try:
+        
         query = """
             SELECT attributes.value1
             FROM attributes
