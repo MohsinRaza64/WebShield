@@ -2,11 +2,11 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 from utils.file_handler import append_to_file, remove_line_from_file
 import sys
+from pystray import MenuItem as item, Icon
 from proxy.proxy_server import start_proxy 
 from malware_detector.file_processor import start_file_processor
 import os
 import threading
-from pystray import MenuItem as item, Icon  # Correct import
 
 ctk.set_appearance_mode("System") 
 ctk.set_default_color_theme("blue") 
@@ -33,6 +33,7 @@ os.makedirs(assets_dir, exist_ok=True)
 bg_path = os.path.join(assets_dir, "bg.jpg")
 bg2_path = os.path.join(assets_dir, "bg2.jpg")
 logopng = os.path.join(assets_dir, "transparent.png")
+logoico = os.path.join(assets_dir, "logo.ico")
 
 # Check if files exist to avoid crashes
 for file_path in [bg_path, bg2_path, logopng]:
@@ -62,20 +63,25 @@ class Dashboard(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("WebShield")
-        self.geometry("640x360")
+        # self.geometry("640x360")
         self.resizable(False, False)
-        self.protocol("WM_DELETE_WINDOW", self.hide_to_tray)  # Redirect close button
+        self.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
 
-        # Correctly find the assets folder
-        base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
-        icon_path = os.path.join(base_path, "assets", "logo.ico")
+        self.update_idletasks()
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        window_width = 640
+        window_height = 360
+        position_x = (screen_width // 2) - (window_width // 2)
+        position_y = (screen_height // 2) - (window_height // 2)
+        self.geometry(f"{window_width}x{window_height}+{position_x}+{position_y}")
 
-        if os.path.exists(icon_path):  # Debugging: Check if the file exists
-            self.iconbitmap(icon_path)
+        if os.path.exists(logoico):
+            self.iconbitmap(logoico)
         else:
-            print(f"Error: Icon file not found at {icon_path}")
+            print(f"Error: Icon file not found at {logoico}")
 
-        self.tray_icon = None  # Placeholder for the system tray icon
+        self.tray_icon = None 
 
         self.background_image = Image.open(bg_path) 
         self.background_photo = ImageTk.PhotoImage(self.background_image)
@@ -332,6 +338,20 @@ class Dashboard(ctk.CTk):
     
 
     def start_webshield(self):
+        from gui.misp_popup import show_misp_config
+        from utils.misp_utils import get_misp_config
+
+        """Ensure a valid Tkinter window is passed"""
+        if not hasattr(self, "root"):
+            self.root = ctk.CTk()
+        show_misp_config()
+
+        config = get_misp_config()
+        if config:
+            print("Received MISP credentials:", config)
+        else:
+            print("Skipping MISP configuration.")
+
         import threading
         if not hasattr(self, 'proxy_thread') or not self.proxy_thread.is_alive():
             self.proxy_thread = threading.Thread(target=self.run_proxy, daemon=True)

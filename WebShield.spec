@@ -2,12 +2,12 @@
 
 
 a = Analysis(
-    ['\\'],
+    ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
-    hookspath=[],
+    datas=[('assets/logo.ico', 'assets'), ('assets', 'assets')],
+    hiddenimports=['pystray', 'PIL', 'PIL.ImageTk', 'customtkinter', 'proxy.proxy_server', 'malware_detector.file_processor'],
+    hookspath=['.'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
