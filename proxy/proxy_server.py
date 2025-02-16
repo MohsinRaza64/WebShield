@@ -65,7 +65,8 @@ def handle_client(client_socket, dashboard):
                 print(blocked_websites)
                 if hostname and any(blocked_site in hostname for blocked_site in blocked_websites):
                     append_to_file(blocked_domains_file, hostname)
-                    dashboard.setup_blocked_domains_tab()
+                    if dashboard.winfo_exists():
+                        dashboard.setup_blocked_domains_tab()
                     response = (
                         "HTTP/1.1 403 Forbidden\r\n"
                         "Content-Type: text/html\r\n"
@@ -134,7 +135,8 @@ def handle_https_tunnel(client_socket, first_line, dashboard):
                     if any(blocked_site in target_host for blocked_site in blocked_websites):
                         print(f"Blocking {target_host} dynamically.")
                         append_to_file(blocked_domains_file, target_host)
-                        dashboard.setup_blocked_domains_tab()
+                        if dashboard.winfo_exists():
+                            dashboard.setup_blocked_domains_tab()
                         client_socket.sendall(b"HTTP/1.1 403 Forbidden\r\n\r\n")
                         return  # Close the connection immediately
 

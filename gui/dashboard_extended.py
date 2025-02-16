@@ -340,10 +340,7 @@ class Dashboard(ctk.CTk):
     def start_webshield(self):
         from gui.misp_popup import show_misp_config
         from utils.misp_utils import get_misp_config
-
-        """Ensure a valid Tkinter window is passed"""
-        if not hasattr(self, "root"):
-            self.root = ctk.CTk()
+        
         show_misp_config()
 
         config = get_misp_config()
