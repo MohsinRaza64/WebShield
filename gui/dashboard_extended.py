@@ -340,7 +340,7 @@ class Dashboard(ctk.CTk):
     def start_webshield(self):
         from gui.misp_popup import show_misp_config
         from utils.misp_utils import get_misp_config
-        
+
         show_misp_config()
 
         config = get_misp_config()
@@ -364,8 +364,8 @@ class Dashboard(ctk.CTk):
         else:
             print("File Monitor is already running.")
 
-
     def stop_webshield(self):
+        self.destroy()
         print("WebShield stopped!")
 
     def run(self):
